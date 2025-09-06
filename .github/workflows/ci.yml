@@ -91,20 +91,6 @@ jobs:
           name: codecov-umbrella
           fail_ci_if_error: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          cache: 'npm'
-
-      - name: Install semantic-release
-        run: npm ci
-
-      - name: Release
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx semantic-release
-
   lint:
     name: 🔍 Linting & Formatage
     runs-on: ubuntu-latest
@@ -189,11 +175,20 @@ jobs:
       - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Setup Python for version extraction
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install tomli
+        run: pip install tomli
+
       - name: Get Version
         id: version
         run: |
-          # Extraction de la version depuis un fichier de configuration ou git
-          VERSION=$(git describe --tags --abbrev=0 2>/dev/null || echo "1.0.0")
+          # Extraction de la version depuis pyproject.toml
+          VERSION=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])")
           echo "version=${VERSION}" >> $GITHUB_OUTPUT
           echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
@@ -205,7 +200,6 @@ jobs:
           tags: |
             ghcr.io/${{ github.repository_owner }}/ai-tournament-service:${{ steps.version.outputs.version }}
             ghcr.io/${{ github.repository_owner }}/ai-tournament-service:latest
-            ghcr.io/${{ github.repository_owner }}/ai-tournament-service:${{ steps.version.outputs.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
