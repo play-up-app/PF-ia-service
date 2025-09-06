@@ -34,6 +34,11 @@ jobs:
         env:
           PYTHONPATH: "."
           ENVIRONMENT: "development"
+          SUPABASE_URL: "https://test.supabase.co"
+          SUPABASE_SERVICE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"
+          SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.public"
+          OPENAI_API_KEY: "sk-test"
+          OPENAI_ASSISTANT_ID: "asst_test"
 
       - name: Vérification couverture
         run: |
@@ -60,6 +65,11 @@ jobs:
         env:
           PYTHONPATH: "."
           ENVIRONMENT: "development"
+          SUPABASE_URL: "https://test.supabase.co"
+          SUPABASE_SERVICE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"
+          SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.public"
+          OPENAI_API_KEY: "sk-test"
+          OPENAI_ASSISTANT_ID: "asst_test"
 
       - name: Test de démarrage de l'application
         run: |
@@ -67,6 +77,11 @@ jobs:
         env:
           PYTHONPATH: "."
           ENVIRONMENT: "development"
+          SUPABASE_URL: "https://test.supabase.co"
+          SUPABASE_SERVICE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"
+          SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.public"
+          OPENAI_API_KEY: "sk-test"
+          OPENAI_ASSISTANT_ID: "asst_test"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
