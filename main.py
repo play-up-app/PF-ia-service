@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 
 # Import des routes
 from app.api.routes.planning import router as planning_router
+from app.core.security import configure_security
+from app.core.rate_limiter import configure_rate_limiter
 
 
 # Création de l'app FastAPI
@@ -13,14 +15,11 @@ app = FastAPI(
     docs_url="/docs"
 )
 
-# Middleware CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # À configurer selon l'environnement
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+# Configuration de sécurité complète (CORS + Headers de sécurité)
+configure_security(app)
+
+# Configuration du rate limiter
+configure_rate_limiter(app)
 
 # Inclusion des routes avec préfixes
 app.include_router(planning_router)
