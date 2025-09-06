@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request
 from app.services.ai_planning_service import aiPlanningService
 from app.schemas.requete import GeneratePlanningRequest
 from app.schemas.response import PlanningResponse, StatusResponse
 from app.services.database_service import databaseService
+from app.core.rate_limiter import limiter, get_rate_limit_config
 
 # Router avec préfixe et tags
 router = APIRouter(
@@ -12,11 +13,12 @@ router = APIRouter(
 
 
 @router.post("/generate", response_model=PlanningResponse, status_code=status.HTTP_201_CREATED)
-async def generate_planning(request: GeneratePlanningRequest):
+@limiter.limit(get_rate_limit_config()["strict"])
+async def generate_planning(request: Request, planning_request: GeneratePlanningRequest):
     """Génère un planning IA pour un tournoi"""
     try:
         # Appel du service AI Planning
-        planning = aiPlanningService.generatePlanning(request.tournament_id)
+        planning = aiPlanningService.generatePlanning(planning_request.tournament_id)
         
         if not planning:
             raise HTTPException(
@@ -40,7 +42,8 @@ async def generate_planning(request: GeneratePlanningRequest):
         )
 
 @router.get("/{planning_id}/status", response_model=StatusResponse)
-async def get_planning_status(planning_id: str):
+@limiter.limit(get_rate_limit_config()["default"])
+async def get_planning_status(request: Request, planning_id: str):
     """Récupère le statut d'un planning"""
     try:
         # Appel du service
@@ -68,7 +71,8 @@ async def get_planning_status(planning_id: str):
         )
 
 @router.post("/{planning_id}/regenerate", response_model=PlanningResponse)
-async def regenerate_planning(planning_id: str):
+@limiter.limit(get_rate_limit_config()["strict"])
+async def regenerate_planning(request: Request, planning_id: str):
     """Régénère un planning existant"""
     try:
         # Appel du service
@@ -96,7 +100,8 @@ async def regenerate_planning(planning_id: str):
         )
 
 @router.get("/{planning_id}", response_model=PlanningResponse)
-async def get_planning_by_id(planning_id: str):
+@limiter.limit(get_rate_limit_config()["default"])
+async def get_planning_by_id(request: Request, planning_id: str):
     """Récupère un planning complet par son ID"""
     try:        
         planning_details = databaseService.getPlanningWithDetailsByPlanningId(planning_id)
@@ -123,7 +128,8 @@ async def get_planning_by_id(planning_id: str):
         )
     
 @router.get("/tournament/{tournament_id}", response_model=PlanningResponse)
-async def get_planning_by_tournament_id(tournament_id: str):
+@limiter.limit(get_rate_limit_config()["default"])
+async def get_planning_by_tournament_id(request: Request, tournament_id: str):
     """Récupère un planning complet par l'ID du tournoi"""
     try:
         # Appel du service
