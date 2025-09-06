@@ -7,8 +7,14 @@ class TournamentService():
     Service pour gerer les tournois et equipes
     """
 
-    def __init__(self):
-        self.supabase = getSupabase()
+    def __init__(self, supabase_client=None):
+        """
+        Initialise le service avec un client Supabase
+        
+        Args:
+            supabase_client: Client Supabase (optionnel, utilise getSupabase() par défaut)
+        """
+        self.supabase = supabase_client if supabase_client is not None else getSupabase()
 
     def getTournamentById(self, tournamentId: str) -> Optional[Tournament]:
         """
