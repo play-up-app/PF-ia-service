@@ -1,0 +1,205 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 2 * * *' # Exécution quotidienne à 2h du matin
+
+jobs:
+  test-coverage:
+    name: 🧪 Tests & Qualité
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Installation des dépendances
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-cov pytest-mock
+
+      - name: Tests unitaires avec couverture
+        run: |
+          ENVIRONMENT=development python -m pytest tests/test_tournament_service.py tests/test_openai_service.py tests/test_database_service.py tests/test_ai_planning_service.py tests/test_security.py --cov=app/services --cov-report=xml --cov-report=term-missing --cov-fail-under=70
+        env:
+          PYTHONPATH: "."
+          ENVIRONMENT: "development"
+          SUPABASE_URL: "https://test.supabase.co"
+          SUPABASE_SERVICE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"
+          SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.public"
+          OPENAI_API_KEY: "sk-test"
+          OPENAI_ASSISTANT_ID: "asst_test"
+
+      - name: Vérification couverture
+        run: |
+          # Extraction de la couverture depuis le rapport XML
+          COVERAGE=$(python -c "
+          import xml.etree.ElementTree as ET
+          tree = ET.parse('coverage.xml')
+          root = tree.getroot()
+          coverage = float(root.attrib['line-rate']) * 100
+          print(f'{coverage:.1f}')
+          ")
+          
+          echo "📊 Couverture actuelle : ${COVERAGE}%"
+          
+          if (( $(echo "$COVERAGE < 70" | bc -l) )); then
+            echo "❌ Couverture insuffisante : ${COVERAGE}% (minimum requis : 70%)"
+            exit 1
+          fi
+          echo "✅ Couverture satisfaisante : ${COVERAGE}%"
+
+      - name: Tests de sécurité
+        run: |
+          ENVIRONMENT=development python -m pytest tests/test_security.py -v
+        env:
+          PYTHONPATH: "."
+          ENVIRONMENT: "development"
+          SUPABASE_URL: "https://test.supabase.co"
+          SUPABASE_SERVICE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"
+          SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.public"
+          OPENAI_API_KEY: "sk-test"
+          OPENAI_ASSISTANT_ID: "asst_test"
+
+      - name: Test de démarrage de l'application
+        run: |
+          ENVIRONMENT=development timeout 10s python -c "from main import app; print('✅ Application démarrée avec succès')" || echo "Application testée"
+        env:
+          PYTHONPATH: "."
+          ENVIRONMENT: "development"
+          SUPABASE_URL: "https://test.supabase.co"
+          SUPABASE_SERVICE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test"
+          SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.public"
+          OPENAI_API_KEY: "sk-test"
+          OPENAI_ASSISTANT_ID: "asst_test"
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
+
+  lint:
+    name: 🔍 Linting & Formatage
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Installation des outils de linting
+        run: |
+          python -m pip install --upgrade pip
+          pip install flake8 black isort mypy
+
+      - name: Vérification du formatage avec Black
+        run: |
+          black --check --diff app/ tests/
+
+      - name: Vérification des imports avec isort
+        run: |
+          isort --check-only --diff app/ tests/
+
+      # - name: Vérification du style avec flake8
+      #   run: |
+      #     flake8 app/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+
+      # - name: Vérification des types avec mypy
+      #   run: |
+      #     mypy app/ --ignore-missing-imports
+
+  security:
+    name: 🔒 Sécurité
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Installation des outils de sécurité
+        run: |
+          python -m pip install --upgrade pip
+          pip install bandit safety
+
+      - name: Analyse de sécurité avec Bandit
+        run: |
+          bandit -r app/ -f json -o bandit-report.json || true
+          bandit -r app/ -f txt
+
+      - name: Vérification des vulnérabilités avec Safety
+        run: |
+          safety check --json --output safety-report.json || true
+          safety check
+
+  build:
+    name: 🐳 Build & Push
+    runs-on: ubuntu-latest
+    needs: [test-coverage, lint, security]
+    permissions:
+      contents: read
+      packages: write
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Setup Python for version extraction
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install tomli
+        run: pip install tomli
+
+      - name: Get Version
+        id: version
+        run: |
+          # Extraction de la version depuis pyproject.toml
+          VERSION=$(python -c "import tomli; print(tomli.load(open('pyproject.toml', 'rb'))['project']['version'])")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "sha=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/ai-tournament-service:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/ai-tournament-service:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+

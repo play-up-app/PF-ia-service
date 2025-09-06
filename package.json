@@ -1,0 +1,19 @@
+{
+  "name": "ai-tournament-service",
+  "version": "0.0.0-development",
+  "description": "Service de génération de planning de tournois avec IA",
+  "private": true,
+  "scripts": {
+    "release": "semantic-release",
+    "release:dry-run": "semantic-release --dry-run"
+  },
+  "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
+    "@semantic-release/github": "^8.0.7",
+    "semantic-release": "^21.1.1"
+  },
+  "release": {
+    "extends": ".releaserc.json"
+  }
+}

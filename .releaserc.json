@@ -1,0 +1,53 @@
+{
+  "tagFormat": "tournament-service-v${version}",
+  "branches": [
+    "main", 
+    {"name": "develop", "prerelease": "beta"}
+  ],
+  "plugins": [
+    ["@semantic-release/commit-analyzer", {
+      "preset": "conventionalcommits",
+      "releaseRules": [
+        {"type": "feat", "scope": "tournament", "release": "minor"},
+        {"type": "fix", "scope": "tournament", "release": "patch"},
+        {"type": "perf", "scope": "tournament", "release": "patch"},
+        {"type": "docs", "scope": "tournament", "release": false},
+        {"type": "style", "scope": "tournament", "release": false},
+        {"type": "refactor", "scope": "tournament", "release": "patch"},
+        {"type": "test", "scope": "tournament", "release": false},
+        {"breaking": true, "scope": "tournament", "release": "major"}
+      ]
+    }],
+    ["@semantic-release/release-notes-generator", {
+      "preset": "conventionalcommits",
+      "presetConfig": {
+        "types": [
+          {"type": "feat", "section": "🚀 Nouvelles fonctionnalités"},
+          {"type": "fix", "section": "🐛 Corrections"},
+          {"type": "perf", "section": "⚡ Optimisations"},
+          {"type": "refactor", "section": "♻️ Refactoring"},
+          {"type": "docs", "section": "📚 Documentation", "hidden": false}
+        ]
+      }
+    }],
+    ["@semantic-release/changelog", {
+      "changelogFile": "CHANGELOG.md"
+    }],
+    ["@semantic-release/git", {
+      "assets": [
+        "CHANGELOG.md",
+        "pyproject.toml",
+        "requirements.txt"
+      ],
+      "message": "chore(tournament): release v${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
+    }],
+    ["@semantic-release/github", {
+      "assets": [
+        {
+          "path": "Dockerfile",
+          "label": "Tournament Service Dockerfile v${nextRelease.version}"
+        }
+      ]
+    }]
+  ]
+}
