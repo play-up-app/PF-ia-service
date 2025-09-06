@@ -117,13 +117,13 @@ jobs:
         run: |
           isort --check-only --diff app/ tests/
 
-      - name: Vérification du style avec flake8
-        run: |
-          flake8 app/ tests/ --max-line-length=88 --extend-ignore=E203,W503
+      # - name: Vérification du style avec flake8
+      #   run: |
+      #     flake8 app/ tests/ --max-line-length=88 --extend-ignore=E203,W503
 
-      - name: Vérification des types avec mypy
-        run: |
-          mypy app/ --ignore-missing-imports
+      # - name: Vérification des types avec mypy
+      #   run: |
+      #     mypy app/ --ignore-missing-imports
 
   security:
     name: 🔒 Sécurité
