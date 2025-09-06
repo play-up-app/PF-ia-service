@@ -1,13 +1,13 @@
-from typing import Optional, Dict, Any
+from typing import Any, Dict, Optional
+
 from app.core.database import getSupabase
 from app.models.models import AITournamentPlanning
-from app.services.tournament_service import tournamentService
-from app.services.openai_service import openai_service
 from app.services.database_service import databaseService
+from app.services.openai_service import openai_service
+from app.services.tournament_service import tournamentService
 
 
-class AIPlanningService():
-
+class AIPlanningService:
     def __init__(self):
         self.supabase = getSupabase()
         self.openAIService = openai_service
@@ -17,14 +17,14 @@ class AIPlanningService():
     def generatePlanning(self, tournamentId: str) -> Optional[AITournamentPlanning]:
         """
         Génère un planning complet pour un tournoi
-        
+
         Args:
             tournament_id: ID du tournoi
-            
+
         Returns:
             AITournamentPlanning si succès, None sinon
         """
-        try: 
+        try:
             # Récupération des données tournoi avec équipes
             tournamentData = self.tournamentService.getTournamentWithTeams(tournamentId)
             if not tournamentData:
@@ -32,11 +32,13 @@ class AIPlanningService():
                 return None
 
             # valide les donnees
-            isValidTournamentData = self.tournamentService._validateTournamentData(tournamentData)
+            isValidTournamentData = self.tournamentService._validateTournamentData(
+                tournamentData
+            )
             if not isValidTournamentData:
                 print("Tournament data non valide")
                 return None
-            
+
             # construction prompt
             prompt = self._buildStaticPrompt(tournamentData)
 
@@ -49,22 +51,20 @@ class AIPlanningService():
             # sauvegarde via database service
             tournament = tournamentData["tournament"]
             planning = self.databaseService.savePlanning(
-                tournamentId,
-                aiResponse, 
-                tournament.tournament_type
+                tournamentId, aiResponse, tournament.tournament_type
             )
 
             if not planning:
                 print("Echec sauvegarde planning")
                 return None
-            
+
             # sauvegarde les matchs
             matches = self.databaseService.saveMatches(planning.id, aiResponse)
             if matches is None:
                 print("Echec sauvegarde matchs - suppression planning")
                 self._deletePlanning(planning.id)
                 return None
-            
+
             # sauvegarde les poules
             poules = self.databaseService.savePoules(planning.id, aiResponse)
             if poules is None:
@@ -78,33 +78,35 @@ class AIPlanningService():
         except Exception as e:
             print(f"Erreur generation planning: {e}")
             return None
-    
+
     def getPlanningStatus(self, planningId: str) -> Optional[str]:
         """
         Récupère le statut d'un planning
-        
+
         Args:
             planning_id: ID du planning
-            
+
         Returns:
             Statut du planning ou None si erreur
         """
         try:
             print(f"🔍 Vérification statut planning {planningId}")
-            
-            result = self.supabase.table("ai_tournament_planning")\
-                .select("status")\
-                .eq("id", planningId)\
+
+            result = (
+                self.supabase.table("ai_tournament_planning")
+                .select("status")
+                .eq("id", planningId)
                 .execute()
-            
+            )
+
             if not result.data:
                 print("❌ Planning non trouvé")
                 return None
-            
+
             status = result.data[0]["status"]
             print(f"✅ Statut: {status}")
             return status
-            
+
         except Exception as e:
             print(f"❌ Erreur récupération statut: {e}")
             return None
@@ -112,33 +114,33 @@ class AIPlanningService():
     def regeneratePlanning(self, planningId: str) -> Optional[AITournamentPlanning]:
         """
         Régénère un planning existant
-        
+
         Args:
             planning_id: ID du planning à régénérer
-            
+
         Returns:
             Nouveau planning généré ou None si erreur
         """
         try:
             print(f"🔄 Régénération planning {planningId}")
-            
+
             # Récupérer l'ancien planning pour obtenir le tournament_id
             old_planning = self._getPlanningById(planningId)
             if not old_planning:
                 print("❌ Planning original non trouvé")
                 return None
-            
+
             # Supprimer l'ancien planning
             self._deletePlanning(planningId)
-            
+
             # Générer un nouveau planning
             new_planning = self.generatePlanning(old_planning.tournament_id)
-            
+
             if new_planning:
                 print(f"✅ Planning régénéré: {new_planning.id}")
-            
+
             return new_planning
-            
+
         except Exception as e:
             print(f"❌ Erreur régénération planning: {e}")
             return None
@@ -147,9 +149,9 @@ class AIPlanningService():
         """Construit le prompt statique pour l'IA"""
         tournament = tournamentData["tournament"]
         teams = tournamentData["teams"]
-        
+
         team_names = [team.name for team in teams]
-        
+
         # Prompt statique optimisé
         prompt = f"""
             Tu es un expert en organisation de tournois de volley-ball. 
@@ -204,15 +206,24 @@ class AIPlanningService():
         """Supprime un planning et ses détails"""
         try:
             # Supprimer d'abord les détails (tables liées)
-            self.supabase.table("ai_generated_match").delete().eq("planning_id", planningId).execute()
-            self.supabase.table("ai_generated_poule").delete().eq("planning_id", planningId).execute()
-            
+            self.supabase.table("ai_generated_match").delete().eq(
+                "planning_id", planningId
+            ).execute()
+            self.supabase.table("ai_generated_poule").delete().eq(
+                "planning_id", planningId
+            ).execute()
+
             # Supprimer le planning principal
-            result = self.supabase.table("ai_tournament_planning").delete().eq("id", planningId).execute()
-            
+            result = (
+                self.supabase.table("ai_tournament_planning")
+                .delete()
+                .eq("id", planningId)
+                .execute()
+            )
+
             print(f"🗑️ Planning {planningId} supprimé")
             return True
-        
+
         except Exception as e:
             print(f"❌ Erreur suppression planning: {e}")
             return False
@@ -220,16 +231,18 @@ class AIPlanningService():
     def _getPlanningById(self, planningId: str) -> Optional[AITournamentPlanning]:
         """Récupère un planning par son ID"""
         try:
-            result = self.supabase.table("ai_tournament_planning")\
-                .select("*")\
-                .eq("id", planningId)\
+            result = (
+                self.supabase.table("ai_tournament_planning")
+                .select("*")
+                .eq("id", planningId)
                 .execute()
-            
+            )
+
             if not result.data:
                 return None
-            
+
             return AITournamentPlanning(**result.data[0])
-            
+
         except Exception as e:
             print(f"❌ Erreur récupération planning: {e}")
             return None
@@ -238,13 +251,29 @@ class AIPlanningService():
         """Supprime tous les plannings d'un tournoi"""
         try:
             # transaction pour supprimer les plannings et les matchs et les poules
-            self.supabase.transaction(lambda tx: tx.table("ai_tournament_planning").delete().eq("tournament_id", tournamentId).execute())
-            self.supabase.transaction(lambda tx: tx.table("ai_generated_match").delete().eq("planning_id", tournamentId).execute())
-            self.supabase.transaction(lambda tx: tx.table("ai_generated_poule").delete().eq("planning_id", tournamentId).execute())
+            self.supabase.transaction(
+                lambda tx: tx.table("ai_tournament_planning")
+                .delete()
+                .eq("tournament_id", tournamentId)
+                .execute()
+            )
+            self.supabase.transaction(
+                lambda tx: tx.table("ai_generated_match")
+                .delete()
+                .eq("planning_id", tournamentId)
+                .execute()
+            )
+            self.supabase.transaction(
+                lambda tx: tx.table("ai_generated_poule")
+                .delete()
+                .eq("planning_id", tournamentId)
+                .execute()
+            )
 
             return True
         except Exception as e:
             print(f"❌ Erreur suppression planning: {e}")
             return False
+
 
 aiPlanningService = AIPlanningService()
