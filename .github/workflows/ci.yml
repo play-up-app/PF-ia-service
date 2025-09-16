@@ -71,6 +71,7 @@ jobs:
           SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.public"
           OPENAI_API_KEY: "sk-test"
           OPENAI_ASSISTANT_ID: "asst_test"
+          CORS_ORIGIN: "http://localhost:3000"
 
       - name: Test de démarrage de l'application
         run: |
@@ -83,6 +84,7 @@ jobs:
           SUPABASE_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.test.public"
           OPENAI_API_KEY: "sk-test"
           OPENAI_ASSISTANT_ID: "asst_test"
+          CORS_ORIGIN: "http://localhost:3000"
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
