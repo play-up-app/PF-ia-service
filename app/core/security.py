@@ -5,6 +5,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
 
+from app.core.config import settings
+
 
 def get_cors_config() -> dict:
     """
@@ -12,7 +14,8 @@ def get_cors_config() -> dict:
     Couvre les principales vulnérabilités OWASP Top 10
     """
     # Récupération des origines autorisées depuis les variables d'environnement
-    cors_origin = os.getenv("CORS_ORIGIN", "http://localhost:3000")
+    cors_origin = os.getenv("CORS_ORIGIN", settings.CORS_ORIGIN)
+    print(f"CORS_ORIGIN: {cors_origin}")
 
     # Support de plusieurs origines séparées par des virgules
     allowed_origins = [origin.strip() for origin in cors_origin.split(",")]
@@ -20,7 +23,7 @@ def get_cors_config() -> dict:
     # En développement, ajouter localhost par défaut
     if (
         "http://localhost:3000" not in allowed_origins
-        and os.getenv("ENVIRONMENT") == "development"
+        and os.getenv("ENVIRONMENT", settings.ENVIRONMENT) == "development"
     ):
         allowed_origins.append("http://localhost:3000")
 

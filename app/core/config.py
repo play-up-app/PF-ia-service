@@ -17,7 +17,7 @@ class Settings(BaseSettings):
     OPENAI_ASSISTANT_ID: str
 
     # SÉCURITÉ
-    CORS_ORIGIN: str = "http://localhost:3000"
+    CORS_ORIGIN: str
     TRUSTED_HOSTS: str = "localhost,127.0.0.1"
     ENVIRONMENT: str = "development"  # development ou production
 
