@@ -82,6 +82,9 @@ docker-build-env:
 		--build-arg SUPABASE_KEY=$$SUPABASE_KEY \
 		--build-arg OPENAI_API_KEY=$$OPENAI_API_KEY \
 		--build-arg OPENAI_ASSISTANT_ID=$$OPENAI_ASSISTANT_ID \
+		--build-arg ENVIRONMENT=$$ENVIRONMENT \
+		--build-arg CORS_ORIGIN=$$CORS_ORIGIN \
+		--build-arg TRUSTED_HOSTS=$$TRUSTED_HOSTS \
 		-t ai-tournament-service:latest .
 
 docker-run-env:
@@ -91,6 +94,9 @@ docker-run-env:
 		-e SUPABASE_KEY=$$SUPABASE_KEY \
 		-e OPENAI_API_KEY=$$OPENAI_API_KEY \
 		-e OPENAI_ASSISTANT_ID=$$OPENAI_ASSISTANT_ID \
+		-e ENVIRONMENT=$$ENVIRONMENT \
+		-e CORS_ORIGIN=$$CORS_ORIGIN \
+		-e TRUSTED_HOSTS=$$TRUSTED_HOSTS \
 		ai-tournament-service:latest
 
 # Docker Compose
