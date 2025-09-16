@@ -4,7 +4,9 @@ from typing import List, Optional
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.middleware.trustedhost import TrustedHostMiddleware
+
 from app.core.config import settings
+
 
 def get_cors_config() -> dict:
     """
