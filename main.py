@@ -44,9 +44,16 @@ async def root():
 
 # Configuration du serveur pour le déploiement
 if __name__ == "__main__":
-    # Configuration du host selon l'environnement
-    environment = os.getenv("ENVIRONMENT", "development")
-    host = "0.0.0.0" if environment == "production" else "127.0.0.1"
+    # Détection automatique de l'environnement
+    # Si PORT est défini par l'environnement (Render, Heroku, etc.), on est en production
+    if os.getenv("PORT"):
+        environment = "production"
+        host = "0.0.0.0"
+        print(f"🔧 Détection cloud - PORT={PORT} défini par l'environnement")
+    else:
+        environment = os.getenv("ENVIRONMENT", "development")
+        host = "127.0.0.1"
+        print(f"🏠 Environnement local détecté")
     
     # Configuration de uvicorn
     config = {
