@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     CORS_ORIGIN: str
     TRUSTED_HOSTS: str = "localhost,127.0.0.1"
     ENVIRONMENT: str = "development"  # development ou production
-    
+
     # PORT - Support pour Render et autres plateformes cloud
     PORT: int = 8003
 
