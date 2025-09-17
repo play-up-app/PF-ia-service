@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     TRUSTED_HOSTS: str = "localhost,127.0.0.1"
     ENVIRONMENT: str = "development"  # development ou production
 
+    # PORT - Support pour Render et autres plateformes cloud
+    PORT: int = 8003
+
     model_config = ConfigDict(env_file=".env", env_file_encoding="utf-8")
 
 

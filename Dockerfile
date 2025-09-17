@@ -46,11 +46,11 @@ ENV ENVIRONMENT=development \
     CORS_ORIGIN=http://localhost:3000 \
     TRUSTED_HOSTS=localhost,127.0.0.1
 
-# Exposition du port
+# Exposition du port (8003 par défaut, sera configuré via la variable PORT)
 EXPOSE 8003
 
 # Commande par défaut pour le développement
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003", "--reload"]
+CMD ["python", "main.py"]
 
 # Stage de production
 FROM base AS production
@@ -68,7 +68,7 @@ RUN chown -R appuser:appgroup /app
 # Passage à l'utilisateur non-root
 USER appuser
 
-# Exposition du port
+# Exposition du port (8003 par défaut, sera configuré via la variable PORT)
 EXPOSE 8003
 
 # Variables d'environnement pour la production
@@ -81,4 +81,4 @@ ENV ENVIRONMENT=$ENVIRONMENT \
     TRUSTED_HOSTS=$TRUSTED_HOSTS
 
 # Commande de démarrage pour la production
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8003"]
+CMD ["python", "main.py"]
