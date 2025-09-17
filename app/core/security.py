@@ -96,11 +96,28 @@ def get_trusted_hosts() -> List[str]:
     Configuration des hôtes de confiance
     """
     trusted_hosts_str = os.getenv("TRUSTED_HOSTS", "localhost,127.0.0.1")
-    environment = os.getenv("ENVIRONMENT", "development")
 
-    # En production, utiliser les hôtes configurés
+    # Détection automatique de l'environnement (même logique que main.py)
+    if os.getenv("PORT"):
+        # On est sur une plateforme cloud (Render, Heroku, etc.)
+        environment = "production"
+        print(f"🔧 Détection cloud pour TrustedHosts - PORT={os.getenv('PORT')} défini")
+    else:
+        environment = os.getenv("ENVIRONMENT", "development")
+
+    # En production, utiliser les hôtes configurés + ajouter automatiquement les domaines Render
     if environment == "production":
-        return [host.strip() for host in trusted_hosts_str.split(",") if host.strip()]
+        configured_hosts = [
+            host.strip() for host in trusted_hosts_str.split(",") if host.strip()
+        ]
+
+        # Ajouter automatiquement les domaines Render si pas déjà présents
+        render_hosts = ["*.onrender.com", "*.herokuapp.com", "*.railway.app"]
+        for render_host in render_hosts:
+            if render_host not in configured_hosts:
+                configured_hosts.append(render_host)
+
+        return configured_hosts
 
     # En développement, autoriser localhost et les hôtes configurés
     default_hosts = ["localhost", "127.0.0.1"]
